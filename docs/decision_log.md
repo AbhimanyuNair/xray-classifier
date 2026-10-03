@@ -75,3 +75,40 @@
 - 27 images have aspect ratio above 2.5 (by class: {'PNEUMONIA': 27})
 - Plan: keep a direct square resize for now. Squashing removes the raw size shortcut from the input; padding would expose it as black bars
 - Possible later experiment: padding vs squashing, compared on the same split
+
+## Decision 14: Re-split by patient, stratified on normal/bacteria/virus
+- Evidence: 264 patients were shared between the original train and test folders
+- Result: images per partition = {'train': 4177, 'val': 871, 'test': 808}; zero patients shared across partitions (asserted in code)
+- Why: prevents leakage; stratifying on subtype keeps harder viral cases evenly spread
+- Alternative rejected: using the provided splits (leaky, and class balance differed per split)
+- Interview one-liner: "The original split leaked patients, so I rebuilt it at patient level and verified it with an assertion."
+
+## Decision 15: Save the split to configs/splits.csv
+- Why: every experiment uses identical data, and anyone can reproduce results
+- Interview one-liner: "The split is a versioned file, not something regenerated on each run."
+
+## Decision 16: PNEUMONIA is the positive class (label 1)
+- Why: recall/sensitivity then means "fraction of pneumonia cases caught", matching the clinical goal
+
+## Decision 17: Pre-resize to 256x256 grayscale PNG cache
+- Why: original images are about 1300x970; reading them each epoch from Drive is slow. Resizing once is deterministic and much faster
+- Alternative rejected: resizing on the fly every epoch
+
+## Decision 18: Resize directly to 224x224 (no center crop)
+- Why: lungs sit near the image edges, so cropping could cut off anatomy; a consistent squash is applied identically in train and test
+- Alternative to test later: pad to square instead of squashing
+
+## Decision 19: ImageNet mean/std normalization
+- Why: Phase 5 uses ImageNet-pretrained weights, which expect inputs scaled this way
+
+## Decision 20: Mild augmentation, no horizontal flip
+- Why: small rotation/shift/zoom mimic positioning differences; brightness/contrast mimic exposure differences between machines. Flipping puts the heart on the wrong side, which is anatomically unrealistic
+- Interview one-liner: "I chose augmentations that match real variation in X-ray acquisition and avoided ones that create impossible anatomy."
+
+## Decision 13 (update): Shortcut check found real geometry and annotation differences
+- Evidence: median width/height by class = {'NORMAL': {'width': 1654.0, 'height': 1323.0}, 'PNEUMONIA': {'width': 1160.0, 'height': 776.0}}
+- Evidence: a classifier using ONLY width, height and aspect ratio reaches validation AUROC = 0.925
+- Evidence: sample images show burned-in text ("A-P", "R" markers, technique labels) and different framing, more often on PNEUMONIA images (small sample, 4 per class)
+- Why it matters: a model could score well by recognizing the acquisition source rather than lung disease
+- Plan: (a) treat the geometry-only AUROC as the floor the CNN must clearly beat, (b) inspect Grad-CAM heatmaps, (c) run an occlusion test masking corners/text regions, (d) report results with this caveat
+- Interview one-liner: "I found that image size alone separated the classes, so I measured how much a geometry-only model could cheat and used that as the baseline to beat."
