@@ -59,3 +59,19 @@
 - Evidence: mean brightness by class = {'NORMAL': 122.1, 'PNEUMONIA': 124.3}
 - Why: size/brightness differences between classes can let a model cheat
 - Interview one-liner: "I tested whether trivial image properties could separate the classes."
+
+## Decision 11 (evidence added): Size of the leakage
+- 264 patients appear in both the original train and test folders (by class: {'PNEUMONIA': 170, 'NORMAL': 94})
+- 416 of 624 original test images (66.7%) come from patients also present in train
+- Both classes are affected, so this is not an artifact of a single filename pattern
+- Assumption to state openly: patient ID is inferred from filenames
+- Interview one-liner: "Two-thirds of the official test set came from patients seen in training, so I rebuilt the split at patient level."
+
+## Decision 12 (evidence added): Grayscale conversion is lossless here
+- 0 of 283 RGB images contain real color; they are grayscale stored as 3 channels
+
+## Evidence note: aspect ratios
+- Median 1.42, middle half 1.26 to 1.59, full range 0.84 to 3.38
+- 27 images have aspect ratio above 2.5 (by class: {'PNEUMONIA': 27})
+- Plan: keep a direct square resize for now. Squashing removes the raw size shortcut from the input; padding would expose it as black bars
+- Possible later experiment: padding vs squashing, compared on the same split
