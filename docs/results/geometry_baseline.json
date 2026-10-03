@@ -1,0 +1,6 @@
+{
+  "model": "geometry-only (width, height, aspect)",
+  "val_auroc": 0.925,
+  "val_recall": 0.906832298136646,
+  "val_accuracy": 0.8599311136624569
+}

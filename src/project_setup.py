@@ -40,3 +40,19 @@ def git_push(message, username, token, repo="xray-classifier"):
     url = f"https://{username}:{token}@github.com/{username}/{repo}.git"
     out = run(["git", "push", url, "HEAD:main"])
     print((out.stdout + out.stderr).replace(token, "***"))
+
+
+def append_decision(entry_text, log_path=None):
+    """Append decision entries, skipping any heading already in the log."""
+    import re
+    log_path = log_path or (PATHS["docs"] / "decision_log.md")
+    existing = log_path.read_text() if log_path.exists() else ""
+    have = set(re.findall(r"(?m)^## (.+)$", existing))
+    chunks = re.split(r"(?m)^(?=## )", entry_text)
+    new = [c for c in chunks if c.strip() and
+           (not c.startswith("## ") or c.splitlines()[0][3:] not in have)]
+    if new:
+        with open(log_path, "a") as f:
+            f.write("
+" + "".join(new))
+    return len(new)

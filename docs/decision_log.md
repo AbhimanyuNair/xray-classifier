@@ -105,6 +105,11 @@
 - Why: small rotation/shift/zoom mimic positioning differences; brightness/contrast mimic exposure differences between machines. Flipping puts the heart on the wrong side, which is anatomically unrealistic
 - Interview one-liner: "I chose augmentations that match real variation in X-ray acquisition and avoided ones that create impossible anatomy."
 
+## Decision 20 (update): Switched augmentation interpolation to bilinear
+- Evidence: visual check of augmented samples showed jagged, stair-stepped edges (RandomAffine defaults to nearest-neighbor)
+- Why: interpolation artifacts are not real anatomy and could become learnable noise
+- Interview one-liner: "I visually inspected augmented images before training and caught an interpolation artifact."
+
 ## Decision 13 (update): Shortcut check found real geometry and annotation differences
 - Evidence: median width/height by class = {'NORMAL': {'width': 1654.0, 'height': 1323.0}, 'PNEUMONIA': {'width': 1160.0, 'height': 776.0}}
 - Evidence: a classifier using ONLY width, height and aspect ratio reaches validation AUROC = 0.925
