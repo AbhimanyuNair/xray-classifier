@@ -25,3 +25,18 @@
 ## Decision 6: Raw data kept separate from processed data
 - Why: original data is never modified, so any preprocessing can be redone
 - Interview one-liner: "Raw data is immutable; everything downstream is regenerable."
+
+## Decision 7: Frame the model as decision support, not diagnosis
+- Why: it is the honest, safe framing, and how real clinical AI tools are positioned
+- Alternative rejected: "AI diagnoses pneumonia" (overclaims, ignores regulation and risk)
+- Interview one-liner: "I positioned it as triage support with a clinician in the loop."
+
+## Decision 8: Recall (sensitivity) as the primary metric
+- Why: a missed pneumonia case is far worse than a false alarm, and accuracy hides this with imbalanced classes
+- Alternative rejected: accuracy (misleading: always guessing PNEUMONIA already scores about 70%)
+- Interview one-liner: "I chose the metric based on the clinical cost of each error type."
+
+## Decision 9: Scope the claim to the paediatric population in the data
+- Why: the dataset is paediatric patients from one hospital, so claims beyond that are unsupported
+- Alternative rejected: claiming general chest X-ray pneumonia detection
+- Interview one-liner: "I stated the model's intended population and limits up front."
