@@ -40,3 +40,22 @@
 - Why: the dataset is paediatric patients from one hospital, so claims beyond that are unsupported
 - Alternative rejected: claiming general chest X-ray pneumonia detection
 - Interview one-liner: "I stated the model's intended population and limits up front."
+
+## Decision 10: Build a one-row-per-image metadata table before modeling
+- Why: a single auditable source for labels, splits and patient IDs
+- Interview one-liner: "I made the dataset inspectable before touching a model."
+
+## Decision 11: Re-split data by patient, not by image
+- Evidence: patients shared between the given splits = {'train-val': 0, 'train-test': 264, 'val-test': 0}
+- Why: images from one patient must never appear in both train and test, or scores are inflated by leakage
+- Interview one-liner: "I checked for patient-level leakage and split accordingly."
+
+## Decision 12: Convert all images to 3-channel at load time
+- Evidence: color modes found = {'L': 5573, 'RGB': 283}
+- Why: pretrained models expect 3 channels, and mixed modes would break batching
+- Interview one-liner: "I standardized input format to match the pretrained model."
+
+## Decision 13: Checked for shortcut features before modeling
+- Evidence: mean brightness by class = {'NORMAL': 122.1, 'PNEUMONIA': 124.3}
+- Why: size/brightness differences between classes can let a model cheat
+- Interview one-liner: "I tested whether trivial image properties could separate the classes."
