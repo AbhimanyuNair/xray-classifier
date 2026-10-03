@@ -1,0 +1,7 @@
+{
+  "seed": 42,
+  "device": "cuda",
+  "img_size": 224,
+  "batch_size": 32,
+  "dataset": "paultimothymooney/chest-xray-pneumonia"
+}
