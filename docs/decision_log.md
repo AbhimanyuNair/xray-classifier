@@ -117,3 +117,25 @@
 - Why it matters: a model could score well by recognizing the acquisition source rather than lung disease
 - Plan: (a) treat the geometry-only AUROC as the floor the CNN must clearly beat, (b) inspect Grad-CAM heatmaps, (c) run an occlusion test masking corners/text regions, (d) report results with this caveat
 - Interview one-liner: "I found that image size alone separated the classes, so I measured how much a geometry-only model could cheat and used that as the baseline to beat."
+
+## Decision 21: Baseline is a small CNN trained from scratch
+- Why: simple, fast, and gives a score the pretrained model in Phase 5 must clearly beat
+- Result (validation): AUROC 0.992, recall 0.949, specificity 0.978 at threshold 0.5
+- Interview one-liner: "I built a simple baseline first so every later improvement could be measured."
+
+## Decision 22: Plain BCE loss, no class weighting in the baseline
+- Why: PNEUMONIA is the MAJORITY class (about 73%). Standard balancing would down-weight pneumonia, pushing the model toward missing it, the opposite of our clinical goal
+- Instead: tune the decision threshold on validation to hit a recall target
+- Later experiment: class-weighted loss as an ablation
+- Interview one-liner: "Class imbalance ran in favor of the positive class, so I controlled recall with the threshold instead of reweighting."
+
+## Decision 23: Select the best epoch by validation AUROC
+- Why: AUROC does not depend on a threshold and is not fooled by class imbalance
+- Alternative rejected: validation accuracy (always guessing pneumonia already scores about 73%)
+
+## Decision 24: Sanity checks before training
+- Initial loss near 0.69 and memorizing one batch catch bugs before long runs
+
+## Decision 25: Test set not used in Phase 4
+- Why: it is touched once, at the end, so the final number is honest
+- Interview one-liner: "I selected models on validation only and kept the test set sealed until the final evaluation."
