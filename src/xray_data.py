@@ -2,6 +2,7 @@
 import torch
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
+from torchvision.transforms import InterpolationMode
 from PIL import Image
 
 LABEL2ID = {"NORMAL": 0, "PNEUMONIA": 1}
@@ -28,7 +29,8 @@ def get_transforms(img_size=224):
     norm = transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD)
     train_tf = transforms.Compose([
         transforms.Resize((img_size, img_size)),
-        transforms.RandomAffine(degrees=10, translate=(0.05, 0.05), scale=(0.95, 1.05)),
+        transforms.RandomAffine(degrees=10, translate=(0.05, 0.05), scale=(0.95, 1.05),
+                                interpolation=InterpolationMode.BILINEAR),
         transforms.ColorJitter(brightness=0.15, contrast=0.15),
         transforms.ToTensor(),
         norm,
