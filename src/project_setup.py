@@ -53,6 +53,5 @@ def append_decision(entry_text, log_path=None):
            (not c.startswith("## ") or c.splitlines()[0][3:] not in have)]
     if new:
         with open(log_path, "a") as f:
-            f.write("
-" + "".join(new))
+            f.write("\n" + "".join(new))
     return len(new)
