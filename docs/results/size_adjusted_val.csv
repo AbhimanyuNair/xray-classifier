@@ -1,0 +1,4 @@
+model,AUROC standard,AUROC adjusted,recall adj,specificity adj
+geometry-only (no pixels),0.925,0.556,0.467,0.603
+naive CNN,0.992,0.966,0.843,0.969
+size-adjusted CNN,0.976,0.962,0.888,0.929

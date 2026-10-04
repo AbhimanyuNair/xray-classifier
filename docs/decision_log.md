@@ -139,3 +139,27 @@
 ## Decision 25: Test set not used in Phase 4
 - Why: it is touched once, at the end, so the final number is honest
 - Interview one-liner: "I selected models on validation only and kept the test set sealed until the final evaluation."
+
+## Decision 26: Treat standard metrics as untrustworthy because of the size shortcut
+- Evidence: a model using only width, height and aspect ratio reached validation AUROC 0.925 and recall 0.907 without seeing pixels
+- Why it matters: a CNN score near that level cannot be credited to lung reading alone
+
+## Decision 27: Size-adjusted evaluation with bin-balanced weights
+- Method: 4 size x 3 shape bins (edges from training images only). Inside each bin, classes are re-weighted to the overall class mix. Bins with fewer than 3 images of either class are excluded; weights clipped at 10
+- Validation of the method: geometry-only AUROC 0.925 (standard) -> 0.556 (size-adjusted)
+- Limitation: removes only the size/shape information captured by the bins, not every acquisition trace
+
+## Decision 28: Report both naive and size-adjusted results
+- Why: showing the before/after is more honest and more informative than one number
+
+## Decision 29: Weighted sampling in training, adjusted metric for model selection
+- Why: otherwise the model learns, and is selected for, the shortcut
+
+## Decision 30: Test set still sealed
+- Final test evaluation will use test-partition weights computed the same way
+
+### Comparison on validation
+                    model  AUROC standard  AUROC adjusted  recall adj  specificity adj
+geometry-only (no pixels)           0.925           0.556       0.467            0.603
+                naive CNN           0.992           0.966       0.843            0.969
+        size-adjusted CNN           0.976           0.962       0.888            0.929
