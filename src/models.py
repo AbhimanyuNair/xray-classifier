@@ -21,3 +21,16 @@ class BaselineCNN(nn.Module):
 
     def forward(self, x):
         return self.head(self.pool(self.features(x))).squeeze(1)   # raw logit, shape (B,)
+
+
+class DenseNetClassifier(nn.Module):
+    """ImageNet-pretrained DenseNet121 with a new 1-logit head."""
+    def __init__(self, pretrained=True, dropout=0.2):
+        super().__init__()
+        from torchvision import models as tvm
+        weights = tvm.DenseNet121_Weights.DEFAULT if pretrained else None
+        self.net = tvm.densenet121(weights=weights)
+        self.net.classifier = nn.Sequential(nn.Dropout(dropout), nn.Linear(self.net.classifier.in_features, 1))
+
+    def forward(self, x):
+        return self.net(x).squeeze(1)

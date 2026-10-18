@@ -163,3 +163,31 @@
 geometry-only (no pixels)           0.925           0.556       0.467            0.603
                 naive CNN           0.992           0.966       0.843            0.969
         size-adjusted CNN           0.976           0.962       0.888            0.929
+
+## Decision 31: ImageNet-pretrained DenseNet121 as the Phase 5 model
+- Why: widely used in chest X-ray work, and pretrained features need far less data than training from scratch
+- Alternatives not tried yet: ResNet50, EfficientNet
+- Interview one-liner: "I used transfer learning from ImageNet because medical datasets are small."
+
+## Decision 32: Full fine-tuning with AdamW, learning rate 1e-4
+- Why: pretrained weights are already good, so smaller steps (10x lower than the scratch model) avoid destroying them
+- No scheduler, to keep runs simple and comparable
+
+## Decision 33: Both runs selected by size-adjusted validation AUROC
+- Why: only one variable differs between runs (sampling), so the comparison is fair
+- E1 plain sampling: AUROC standard 0.997, adjusted 0.990, recall adj 0.970, specificity adj 0.960
+- E2 size-balanced sampling: AUROC standard 0.997, adjusted 0.994, recall adj 0.931, specificity adj 0.986
+
+## Decision 34: Compare every model under both standard and size-adjusted metrics
+- Why: the size shortcut makes standard metrics alone misleading
+
+## Decision 35: Test set still sealed
+- Why: it is evaluated once, in Phase 6
+
+### Comparison on validation (all models)
+                    model  AUROC standard  AUROC adjusted  recall adj  specificity adj
+geometry-only (no pixels)           0.925           0.556       0.467            0.603
+                naive CNN           0.992           0.966       0.843            0.969
+        size-adjusted CNN           0.976           0.962       0.888            0.929
+        DenseNet121 plain           0.997           0.990       0.970            0.960
+DenseNet121 size-balanced           0.997           0.994       0.931            0.986
