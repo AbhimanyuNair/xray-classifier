@@ -1,0 +1,3 @@
+probe,AUROC standard,AUROC adjusted
+periphery_only,0.982,0.966
+center_only,0.996,0.994

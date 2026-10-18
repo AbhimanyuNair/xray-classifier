@@ -212,3 +212,19 @@ DenseNet121 size-balanced           0.997           0.994       0.931           
 
 ## Decision 40: Occlusion tests on validation with size-adjusted metrics
 - Why: a causal check of reliance on markers, borders and lungs. Black rectangles also shift the input distribution, so compare variants with each other
+
+## Decision 41: Grad-CAM for the NORMAL direction, plus a bottom-corner occlusion test
+- Why: the pneumonia heatmap is empty for normal predictions, so it cannot explain NORMAL calls
+- Bottom corners (15%) masked, adjusted AUROC: 0.993 (baseline 0.994)
+
+## Decision 42: Probe models trained only on the periphery or only on the center
+- Why: measures how much class signal exists outside the central chest. Diagnostic only; the candidate model stays the full DenseNet121 size-balanced unless probes show a serious problem
+- Reading: periphery-only near the full model means strong class signal outside the central chest (shortcut capacity or peripheral lung tissue); center-only near the full model means the central chest alone is sufficient
+
+## Decision 43: Two pre-declared models go to the final test evaluation, with the tie-break rule fixed before the test set is opened
+- Model A: DenseNet121, size-balanced, full image (validation adjusted AUROC 0.994)
+- Model B: DenseNet121, size-balanced, periphery masked so only the central chest is visible (validation adjusted AUROC 0.994)
+- Evidence: occlusion and probe tests show the central chest alone is sufficient (occlusion 0.985, probe 0.994), while a periphery-only probe also reaches 0.966, so class signal outside the central chest exists
+- Rule: if B is within 0.005 adjusted AUROC of A on validation, B is the headline model because it cannot see markers, borders or framing; A is reported as secondary. Both are reported on test, with no switching after seeing test results
+- Limitation: without lung masks we cannot tell whether the periphery signal is shortcut or peripheral lung tissue
+- Interview one-liner: "I fixed the model-choice rule before opening the test set, and chose the model that cannot see acquisition artifacts when performance tied."
