@@ -1,0 +1,6 @@
+variant,AUROC standard,AUROC adjusted,recall adj,specificity adj
+none (baseline),0.997,0.994,0.931,0.986
+top corners masked,0.996,0.992,0.93,0.986
+outer 10% border masked,0.994,0.991,0.978,0.901
+center masked (periphery only visible),0.961,0.897,1.0,0.007
+periphery masked (center only visible),0.99,0.985,0.993,0.683

@@ -201,3 +201,14 @@ DenseNet121 size-balanced           0.997           0.994       0.931           
 ## Decision 37: Explainability on validation images before the final test evaluation
 - Why: if heatmaps show the model reading text markers or borders, we fix it before the test set is opened, instead of being tempted to tune on test results
 - Interview one-liner: "I audited what the model looked at before spending the test set."
+
+## Decision 38: Grad-CAM on the last DenseNet feature map, inspected on validation images
+- Why: shows where the model looks; examples drawn from caught, cleared, missed and false-alarm groups
+- Figure: docs/figures/gradcam_grid.png
+
+## Decision 39: Quantify attention with fixed regions, compared with each region's area share
+- Regions: central chest box, periphery, top corners (where text markers sit), outer 10% border
+- Limitation: no lung masks, so this is a proxy
+
+## Decision 40: Occlusion tests on validation with size-adjusted metrics
+- Why: a causal check of reliance on markers, borders and lungs. Black rectangles also shift the input distribution, so compare variants with each other
