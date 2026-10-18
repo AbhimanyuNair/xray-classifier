@@ -191,3 +191,13 @@ geometry-only (no pixels)           0.925           0.556       0.467           
         size-adjusted CNN           0.976           0.962       0.888            0.929
         DenseNet121 plain           0.997           0.990       0.970            0.960
 DenseNet121 size-balanced           0.997           0.994       0.931            0.986
+
+## Decision 36: DenseNet121 size-balanced is the single candidate for final evaluation
+- Rule (set before touching the test set): highest size-adjusted validation AUROC
+- Evidence: 0.994 vs 0.990 for plain sampling (difference is within noise on 399 images)
+- Why only one model goes to the test set: scoring several models on test and keeping the best inflates the final number
+- Interview one-liner: "I fixed the selection rule before opening the test set and evaluated one candidate."
+
+## Decision 37: Explainability on validation images before the final test evaluation
+- Why: if heatmaps show the model reading text markers or borders, we fix it before the test set is opened, instead of being tempted to tune on test results
+- Interview one-liner: "I audited what the model looked at before spending the test set."
