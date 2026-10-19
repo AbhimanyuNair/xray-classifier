@@ -228,3 +228,15 @@ DenseNet121 size-balanced           0.997           0.994       0.931           
 - Rule: if B is within 0.005 adjusted AUROC of A on validation, B is the headline model because it cannot see markers, borders or framing; A is reported as secondary. Both are reported on test, with no switching after seeing test results
 - Limitation: without lung masks we cannot tell whether the periphery signal is shortcut or peripheral lung tissue
 - Interview one-liner: "I fixed the model-choice rule before opening the test set, and chose the model that cannot see acquisition artifacts when performance tied."
+
+## Decision 44: Operating thresholds chosen on validation for 95% size-adjusted recall, then applied once to test
+- Thresholds: A 0.276, B 0.734
+- Limitation: chosen on only 399 adjusted validation images, so test recall can differ
+
+## Decision 45: Patient-level bootstrap (1000 resamples) for 95% confidence intervals
+- Why: images from one patient are not independent; resampling images would give intervals that are too narrow
+- Limitation: size-adjusted weights are computed once on the test set, not recomputed per resample
+
+## Decision 46: Final test results (test set opened once; both pre-declared models reported)
+- Headline model by the pre-declared rule: B
+Breakdown for the headline model:

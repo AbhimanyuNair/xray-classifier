@@ -30,3 +30,21 @@ def gradcam(net, x):
     cam = cam - cam.flatten(1).min(1)[0][:, None, None]
     cam = cam / (cam.flatten(1).max(1)[0][:, None, None] + 1e-8)
     return cam.detach().cpu().numpy(), torch.sigmoid(logit).detach().cpu().numpy()
+
+
+class MaskedLoader:
+    """Wraps a DataLoader and blacks out the pixels where mask is True."""
+    def __init__(self, loader, mask, mean, std):
+        self.loader = loader
+        self.dataset = loader.dataset
+        self.mask = torch.tensor(mask)[None, None]
+        m = torch.tensor(mean)[None, :, None, None]
+        s = torch.tensor(std)[None, :, None, None]
+        self.black = (0 - m) / s
+
+    def __len__(self):
+        return len(self.loader)
+
+    def __iter__(self):
+        for x, y in self.loader:
+            yield torch.where(self.mask, self.black.expand_as(x), x), y
