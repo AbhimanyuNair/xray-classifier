@@ -4,7 +4,7 @@ from pathlib import Path
 import numpy as np
 import torch
 
-PROJECT_DIR = Path("/content/drive/MyDrive/xray-classifier")
+PROJECT_DIR = Path(__file__).resolve().parent.parent
 PATHS = {
     "raw": PROJECT_DIR / "data" / "raw",
     "processed": PROJECT_DIR / "data" / "processed",

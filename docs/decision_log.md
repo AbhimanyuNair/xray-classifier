@@ -1,242 +1,313 @@
 # Decision Log
 
 ## Decision 1: Google Colab for training
-- Why: free GPU, same environment every time, reproducible
-- Alternative rejected: training on laptop (too slow)
+
+- Why: free GPU, same environment every time, reproducible  
+- Alternative rejected: training on laptop (too slow)  
 - Interview one-liner: "Colab gave me GPU access without hardware cost, and a consistent environment."
 
 ## Decision 2: PyTorch over Keras
-- Why: industry/research standard for medical imaging, full control of training loop
-- Alternative rejected: Keras (faster to write, hides internals)
+
+- Why: industry/research standard for medical imaging, full control of training loop  
+- Alternative rejected: Keras (faster to write, hides internals)  
 - Interview one-liner: "Writing my own training loop gave me control over debugging and experiments."
 
 ## Decision 3: Code in Git, big files in Drive
-- Why: Colab storage is temporary; Git is for small versioned files
+
+- Why: Colab storage is temporary; Git is for small versioned files  
 - Interview one-liner: "I separated versioned code from large artifacts."
 
 ## Decision 4: Kaggle key in Colab Secrets
-- Why: keys in notebooks leak when shared
+
+- Why: keys in notebooks leak when shared  
 - Interview one-liner: "I kept credentials out of source code."
 
-## Decision 5: Fixed seed + central config
-- Why: so results can be reproduced and compared fairly
+## Decision 5: Fixed seed \+ central config
+
+- Why: so results can be reproduced and compared fairly  
 - Interview one-liner: "Every run is reproducible from a saved config and seed."
 
 ## Decision 6: Raw data kept separate from processed data
-- Why: original data is never modified, so any preprocessing can be redone
+
+- Why: original data is never modified, so any preprocessing can be redone  
 - Interview one-liner: "Raw data is immutable; everything downstream is regenerable."
 
 ## Decision 7: Frame the model as decision support, not diagnosis
-- Why: it is the honest, safe framing, and how real clinical AI tools are positioned
-- Alternative rejected: "AI diagnoses pneumonia" (overclaims, ignores regulation and risk)
+
+- Why: it is the honest, safe framing, and how real clinical AI tools are positioned  
+- Alternative rejected: "AI diagnoses pneumonia" (overclaims, ignores regulation and risk)  
 - Interview one-liner: "I positioned it as triage support with a clinician in the loop."
 
 ## Decision 8: Recall (sensitivity) as the primary metric
-- Why: a missed pneumonia case is far worse than a false alarm, and accuracy hides this with imbalanced classes
-- Alternative rejected: accuracy (misleading: always guessing PNEUMONIA already scores about 70%)
+
+- Why: a missed pneumonia case is far worse than a false alarm, and accuracy hides this with imbalanced classes  
+- Alternative rejected: accuracy (misleading: always guessing PNEUMONIA already scores about 70%)  
 - Interview one-liner: "I chose the metric based on the clinical cost of each error type."
 
 ## Decision 9: Scope the claim to the paediatric population in the data
-- Why: the dataset is paediatric patients from one hospital, so claims beyond that are unsupported
-- Alternative rejected: claiming general chest X-ray pneumonia detection
+
+- Why: the dataset is paediatric patients from one hospital, so claims beyond that are unsupported  
+- Alternative rejected: claiming general chest X-ray pneumonia detection  
 - Interview one-liner: "I stated the model's intended population and limits up front."
 
 ## Decision 10: Build a one-row-per-image metadata table before modeling
-- Why: a single auditable source for labels, splits and patient IDs
+
+- Why: a single auditable source for labels, splits and patient IDs  
 - Interview one-liner: "I made the dataset inspectable before touching a model."
 
 ## Decision 11: Re-split data by patient, not by image
-- Evidence: patients shared between the given splits = {'train-val': 0, 'train-test': 264, 'val-test': 0}
-- Why: images from one patient must never appear in both train and test, or scores are inflated by leakage
+
+- Evidence: patients shared between the given splits \= {'train-val': 0, 'train-test': 264, 'val-test': 0}  
+- Why: images from one patient must never appear in both train and test, or scores are inflated by leakage  
 - Interview one-liner: "I checked for patient-level leakage and split accordingly."
 
 ## Decision 12: Convert all images to 3-channel at load time
-- Evidence: color modes found = {'L': 5573, 'RGB': 283}
-- Why: pretrained models expect 3 channels, and mixed modes would break batching
+
+- Evidence: color modes found \= {'L': 5573, 'RGB': 283}  
+- Why: pretrained models expect 3 channels, and mixed modes would break batching  
 - Interview one-liner: "I standardized input format to match the pretrained model."
 
 ## Decision 13: Checked for shortcut features before modeling
-- Evidence: mean brightness by class = {'NORMAL': 122.1, 'PNEUMONIA': 124.3}
-- Why: size/brightness differences between classes can let a model cheat
+
+- Evidence: mean brightness by class \= {'NORMAL': 122.1, 'PNEUMONIA': 124.3}  
+- Why: size/brightness differences between classes can let a model cheat  
 - Interview one-liner: "I tested whether trivial image properties could separate the classes."
 
 ## Decision 11 (evidence added): Size of the leakage
-- 264 patients appear in both the original train and test folders (by class: {'PNEUMONIA': 170, 'NORMAL': 94})
-- 416 of 624 original test images (66.7%) come from patients also present in train
-- Both classes are affected, so this is not an artifact of a single filename pattern
-- Assumption to state openly: patient ID is inferred from filenames
+
+- 264 patients appear in both the original train and test folders (by class: {'PNEUMONIA': 170, 'NORMAL': 94})  
+- 416 of 624 original test images (66.7%) come from patients also present in train  
+- Both classes are affected, so this is not an artifact of a single filename pattern  
+- Assumption to state openly: patient ID is inferred from filenames  
 - Interview one-liner: "Two-thirds of the official test set came from patients seen in training, so I rebuilt the split at patient level."
 
 ## Decision 12 (evidence added): Grayscale conversion is lossless here
+
 - 0 of 283 RGB images contain real color; they are grayscale stored as 3 channels
 
 ## Evidence note: aspect ratios
-- Median 1.42, middle half 1.26 to 1.59, full range 0.84 to 3.38
-- 27 images have aspect ratio above 2.5 (by class: {'PNEUMONIA': 27})
-- Plan: keep a direct square resize for now. Squashing removes the raw size shortcut from the input; padding would expose it as black bars
+
+- Median 1.42, middle half 1.26 to 1.59, full range 0.84 to 3.38  
+- 27 images have aspect ratio above 2.5 (by class: {'PNEUMONIA': 27})  
+- Plan: keep a direct square resize for now. Squashing removes the raw size shortcut from the input; padding would expose it as black bars  
 - Possible later experiment: padding vs squashing, compared on the same split
 
 ## Decision 14: Re-split by patient, stratified on normal/bacteria/virus
-- Evidence: 264 patients were shared between the original train and test folders
-- Result: images per partition = {'train': 4177, 'val': 871, 'test': 808}; zero patients shared across partitions (asserted in code)
-- Why: prevents leakage; stratifying on subtype keeps harder viral cases evenly spread
-- Alternative rejected: using the provided splits (leaky, and class balance differed per split)
+
+- Evidence: 264 patients were shared between the original train and test folders  
+- Result: images per partition \= {'train': 4177, 'val': 871, 'test': 808}; zero patients shared across partitions (asserted in code)  
+- Why: prevents leakage; stratifying on subtype keeps harder viral cases evenly spread  
+- Alternative rejected: using the provided splits (leaky, and class balance differed per split)  
 - Interview one-liner: "The original split leaked patients, so I rebuilt it at patient level and verified it with an assertion."
 
 ## Decision 15: Save the split to configs/splits.csv
-- Why: every experiment uses identical data, and anyone can reproduce results
+
+- Why: every experiment uses identical data, and anyone can reproduce results  
 - Interview one-liner: "The split is a versioned file, not something regenerated on each run."
 
-## Decision 16: PNEUMONIA is the positive class (label 1)
+## Decision 16: PNEUMONIA is the positive class (label 1\)
+
 - Why: recall/sensitivity then means "fraction of pneumonia cases caught", matching the clinical goal
 
 ## Decision 17: Pre-resize to 256x256 grayscale PNG cache
-- Why: original images are about 1300x970; reading them each epoch from Drive is slow. Resizing once is deterministic and much faster
+
+- Why: original images are about 1300x970; reading them each epoch from Drive is slow. Resizing once is deterministic and much faster  
 - Alternative rejected: resizing on the fly every epoch
 
 ## Decision 18: Resize directly to 224x224 (no center crop)
-- Why: lungs sit near the image edges, so cropping could cut off anatomy; a consistent squash is applied identically in train and test
+
+- Why: lungs sit near the image edges, so cropping could cut off anatomy; a consistent squash is applied identically in train and test  
 - Alternative to test later: pad to square instead of squashing
 
 ## Decision 19: ImageNet mean/std normalization
+
 - Why: Phase 5 uses ImageNet-pretrained weights, which expect inputs scaled this way
 
 ## Decision 20: Mild augmentation, no horizontal flip
-- Why: small rotation/shift/zoom mimic positioning differences; brightness/contrast mimic exposure differences between machines. Flipping puts the heart on the wrong side, which is anatomically unrealistic
+
+- Why: small rotation/shift/zoom mimic positioning differences; brightness/contrast mimic exposure differences between machines. Flipping puts the heart on the wrong side, which is anatomically unrealistic  
 - Interview one-liner: "I chose augmentations that match real variation in X-ray acquisition and avoided ones that create impossible anatomy."
 
 ## Decision 20 (update): Switched augmentation interpolation to bilinear
-- Evidence: visual check of augmented samples showed jagged, stair-stepped edges (RandomAffine defaults to nearest-neighbor)
-- Why: interpolation artifacts are not real anatomy and could become learnable noise
+
+- Evidence: visual check of augmented samples showed jagged, stair-stepped edges (RandomAffine defaults to nearest-neighbor)  
+- Why: interpolation artifacts are not real anatomy and could become learnable noise  
 - Interview one-liner: "I visually inspected augmented images before training and caught an interpolation artifact."
 
 ## Decision 13 (update): Shortcut check found real geometry and annotation differences
-- Evidence: median width/height by class = {'NORMAL': {'width': 1654.0, 'height': 1323.0}, 'PNEUMONIA': {'width': 1160.0, 'height': 776.0}}
-- Evidence: a classifier using ONLY width, height and aspect ratio reaches validation AUROC = 0.925
-- Evidence: sample images show burned-in text ("A-P", "R" markers, technique labels) and different framing, more often on PNEUMONIA images (small sample, 4 per class)
-- Why it matters: a model could score well by recognizing the acquisition source rather than lung disease
-- Plan: (a) treat the geometry-only AUROC as the floor the CNN must clearly beat, (b) inspect Grad-CAM heatmaps, (c) run an occlusion test masking corners/text regions, (d) report results with this caveat
+
+- Evidence: median width/height by class \= {'NORMAL': {'width': 1654.0, 'height': 1323.0}, 'PNEUMONIA': {'width': 1160.0, 'height': 776.0}}  
+- Evidence: a classifier using ONLY width, height and aspect ratio reaches validation AUROC \= 0.925  
+- Evidence: sample images show burned-in text ("A-P", "R" markers, technique labels) and different framing, more often on PNEUMONIA images (small sample, 4 per class)  
+- Why it matters: a model could score well by recognizing the acquisition source rather than lung disease  
+- Plan: (a) treat the geometry-only AUROC as the floor the CNN must clearly beat, (b) inspect Grad-CAM heatmaps, (c) run an occlusion test masking corners/text regions, (d) report results with this caveat  
 - Interview one-liner: "I found that image size alone separated the classes, so I measured how much a geometry-only model could cheat and used that as the baseline to beat."
 
 ## Decision 21: Baseline is a small CNN trained from scratch
-- Why: simple, fast, and gives a score the pretrained model in Phase 5 must clearly beat
-- Result (validation): AUROC 0.992, recall 0.949, specificity 0.978 at threshold 0.5
+
+- Why: simple, fast, and gives a score the pretrained model in Phase 5 must clearly beat  
+- Result (validation): AUROC 0.992, recall 0.949, specificity 0.978 at threshold 0.5  
 - Interview one-liner: "I built a simple baseline first so every later improvement could be measured."
 
 ## Decision 22: Plain BCE loss, no class weighting in the baseline
-- Why: PNEUMONIA is the MAJORITY class (about 73%). Standard balancing would down-weight pneumonia, pushing the model toward missing it, the opposite of our clinical goal
-- Instead: tune the decision threshold on validation to hit a recall target
-- Later experiment: class-weighted loss as an ablation
+
+- Why: PNEUMONIA is the MAJORITY class (about 73%). Standard balancing would down-weight pneumonia, pushing the model toward missing it, the opposite of our clinical goal  
+- Instead: tune the decision threshold on validation to hit a recall target  
+- Later experiment: class-weighted loss as an ablation  
 - Interview one-liner: "Class imbalance ran in favor of the positive class, so I controlled recall with the threshold instead of reweighting."
 
 ## Decision 23: Select the best epoch by validation AUROC
-- Why: AUROC does not depend on a threshold and is not fooled by class imbalance
+
+- Why: AUROC does not depend on a threshold and is not fooled by class imbalance  
 - Alternative rejected: validation accuracy (always guessing pneumonia already scores about 73%)
 
 ## Decision 24: Sanity checks before training
+
 - Initial loss near 0.69 and memorizing one batch catch bugs before long runs
 
 ## Decision 25: Test set not used in Phase 4
-- Why: it is touched once, at the end, so the final number is honest
+
+- Why: it is touched once, at the end, so the final number is honest  
 - Interview one-liner: "I selected models on validation only and kept the test set sealed until the final evaluation."
 
 ## Decision 26: Treat standard metrics as untrustworthy because of the size shortcut
-- Evidence: a model using only width, height and aspect ratio reached validation AUROC 0.925 and recall 0.907 without seeing pixels
+
+- Evidence: a model using only width, height and aspect ratio reached validation AUROC 0.925 and recall 0.907 without seeing pixels  
 - Why it matters: a CNN score near that level cannot be credited to lung reading alone
 
 ## Decision 27: Size-adjusted evaluation with bin-balanced weights
-- Method: 4 size x 3 shape bins (edges from training images only). Inside each bin, classes are re-weighted to the overall class mix. Bins with fewer than 3 images of either class are excluded; weights clipped at 10
-- Validation of the method: geometry-only AUROC 0.925 (standard) -> 0.556 (size-adjusted)
+
+- Method: 4 size x 3 shape bins (edges from training images only). Inside each bin, classes are re-weighted to the overall class mix. Bins with fewer than 3 images of either class are excluded; weights clipped at 10  
+- Validation of the method: geometry-only AUROC 0.925 (standard) \-\> 0.556 (size-adjusted)  
 - Limitation: removes only the size/shape information captured by the bins, not every acquisition trace
 
 ## Decision 28: Report both naive and size-adjusted results
+
 - Why: showing the before/after is more honest and more informative than one number
 
 ## Decision 29: Weighted sampling in training, adjusted metric for model selection
+
 - Why: otherwise the model learns, and is selected for, the shortcut
 
 ## Decision 30: Test set still sealed
+
 - Final test evaluation will use test-partition weights computed the same way
 
 ### Comparison on validation
-                    model  AUROC standard  AUROC adjusted  recall adj  specificity adj
-geometry-only (no pixels)           0.925           0.556       0.467            0.603
-                naive CNN           0.992           0.966       0.843            0.969
-        size-adjusted CNN           0.976           0.962       0.888            0.929
+
+```
+                model  AUROC standard  AUROC adjusted  recall adj  specificity adj
+```
+
+&nbsp;
+
+geometry-only (no pixels)           0.925           0.556       0.467            0.603 naive CNN           0.992           0.966       0.843            0.969 size-adjusted CNN           0.976           0.962       0.888            0.929
 
 ## Decision 31: ImageNet-pretrained DenseNet121 as the Phase 5 model
-- Why: widely used in chest X-ray work, and pretrained features need far less data than training from scratch
-- Alternatives not tried yet: ResNet50, EfficientNet
+
+- Why: widely used in chest X-ray work, and pretrained features need far less data than training from scratch  
+- Alternatives not tried yet: ResNet50, EfficientNet  
 - Interview one-liner: "I used transfer learning from ImageNet because medical datasets are small."
 
 ## Decision 32: Full fine-tuning with AdamW, learning rate 1e-4
-- Why: pretrained weights are already good, so smaller steps (10x lower than the scratch model) avoid destroying them
+
+- Why: pretrained weights are already good, so smaller steps (10x lower than the scratch model) avoid destroying them  
 - No scheduler, to keep runs simple and comparable
 
 ## Decision 33: Both runs selected by size-adjusted validation AUROC
-- Why: only one variable differs between runs (sampling), so the comparison is fair
-- E1 plain sampling: AUROC standard 0.997, adjusted 0.990, recall adj 0.970, specificity adj 0.960
+
+- Why: only one variable differs between runs (sampling), so the comparison is fair  
+- E1 plain sampling: AUROC standard 0.997, adjusted 0.990, recall adj 0.970, specificity adj 0.960  
 - E2 size-balanced sampling: AUROC standard 0.997, adjusted 0.994, recall adj 0.931, specificity adj 0.986
 
 ## Decision 34: Compare every model under both standard and size-adjusted metrics
+
 - Why: the size shortcut makes standard metrics alone misleading
 
 ## Decision 35: Test set still sealed
+
 - Why: it is evaluated once, in Phase 6
 
 ### Comparison on validation (all models)
-                    model  AUROC standard  AUROC adjusted  recall adj  specificity adj
-geometry-only (no pixels)           0.925           0.556       0.467            0.603
-                naive CNN           0.992           0.966       0.843            0.969
-        size-adjusted CNN           0.976           0.962       0.888            0.929
-        DenseNet121 plain           0.997           0.990       0.970            0.960
-DenseNet121 size-balanced           0.997           0.994       0.931            0.986
+
+```
+                model  AUROC standard  AUROC adjusted  recall adj  specificity adj
+```
+
+&nbsp;
+
+geometry-only (no pixels)           0.925           0.556       0.467            0.603 naive CNN           0.992           0.966       0.843            0.969 size-adjusted CNN           0.976           0.962       0.888            0.929 DenseNet121 plain           0.997           0.990       0.970            0.960 DenseNet121 size-balanced           0.997           0.994       0.931            0.986
 
 ## Decision 36: DenseNet121 size-balanced is the single candidate for final evaluation
-- Rule (set before touching the test set): highest size-adjusted validation AUROC
-- Evidence: 0.994 vs 0.990 for plain sampling (difference is within noise on 399 images)
-- Why only one model goes to the test set: scoring several models on test and keeping the best inflates the final number
+
+- Rule (set before touching the test set): highest size-adjusted validation AUROC  
+- Evidence: 0.994 vs 0.990 for plain sampling (difference is within noise on 399 images)  
+- Why only one model goes to the test set: scoring several models on test and keeping the best inflates the final number  
 - Interview one-liner: "I fixed the selection rule before opening the test set and evaluated one candidate."
 
 ## Decision 37: Explainability on validation images before the final test evaluation
-- Why: if heatmaps show the model reading text markers or borders, we fix it before the test set is opened, instead of being tempted to tune on test results
+
+- Why: if heatmaps show the model reading text markers or borders, we fix it before the test set is opened, instead of being tempted to tune on test results  
 - Interview one-liner: "I audited what the model looked at before spending the test set."
 
 ## Decision 38: Grad-CAM on the last DenseNet feature map, inspected on validation images
-- Why: shows where the model looks; examples drawn from caught, cleared, missed and false-alarm groups
-- Figure: docs/figures/gradcam_grid.png
+
+- Why: shows where the model looks; examples drawn from caught, cleared, missed and false-alarm groups  
+- Figure: docs/figures/gradcam\_grid.png
 
 ## Decision 39: Quantify attention with fixed regions, compared with each region's area share
-- Regions: central chest box, periphery, top corners (where text markers sit), outer 10% border
+
+- Regions: central chest box, periphery, top corners (where text markers sit), outer 10% border  
 - Limitation: no lung masks, so this is a proxy
 
 ## Decision 40: Occlusion tests on validation with size-adjusted metrics
+
 - Why: a causal check of reliance on markers, borders and lungs. Black rectangles also shift the input distribution, so compare variants with each other
 
 ## Decision 41: Grad-CAM for the NORMAL direction, plus a bottom-corner occlusion test
-- Why: the pneumonia heatmap is empty for normal predictions, so it cannot explain NORMAL calls
+
+- Why: the pneumonia heatmap is empty for normal predictions, so it cannot explain NORMAL calls  
 - Bottom corners (15%) masked, adjusted AUROC: 0.993 (baseline 0.994)
 
 ## Decision 42: Probe models trained only on the periphery or only on the center
-- Why: measures how much class signal exists outside the central chest. Diagnostic only; the candidate model stays the full DenseNet121 size-balanced unless probes show a serious problem
+
+- Why: measures how much class signal exists outside the central chest. Diagnostic only; the candidate model stays the full DenseNet121 size-balanced unless probes show a serious problem  
 - Reading: periphery-only near the full model means strong class signal outside the central chest (shortcut capacity or peripheral lung tissue); center-only near the full model means the central chest alone is sufficient
 
 ## Decision 43: Two pre-declared models go to the final test evaluation, with the tie-break rule fixed before the test set is opened
-- Model A: DenseNet121, size-balanced, full image (validation adjusted AUROC 0.994)
-- Model B: DenseNet121, size-balanced, periphery masked so only the central chest is visible (validation adjusted AUROC 0.994)
-- Evidence: occlusion and probe tests show the central chest alone is sufficient (occlusion 0.985, probe 0.994), while a periphery-only probe also reaches 0.966, so class signal outside the central chest exists
-- Rule: if B is within 0.005 adjusted AUROC of A on validation, B is the headline model because it cannot see markers, borders or framing; A is reported as secondary. Both are reported on test, with no switching after seeing test results
-- Limitation: without lung masks we cannot tell whether the periphery signal is shortcut or peripheral lung tissue
-- Interview one-liner: "I fixed the model-choice rule before opening the test set, and chose the model that cannot see acquisition artifacts when performance tied."
+
+- Model A: DenseNet121, size-balanced, full image (validation adjusted AUROC 0.994)  
+- Model B: DenseNet121, size-balanced, periphery masked so only the central chest is visible (validation adjusted AUROC 0.994)  
+- Evidence: occlusion and probe tests show the central chest alone is sufficient (occlusion 0.985, probe 0.994), while a periphery-only probe also reaches 0.966, so class signal outside the central chest exists  
+- Rule: if B is within 0.005 adjusted AUROC of A on validation, B is the headline model because it cannot see markers, borders or framing; A is reported as secondary. Both are reported on test, with no switching after seeing test results  
+- Limitation: without lung masks we cannot tell whether the periphery signal is shortcut or peripheral lung tissue  
+- Interview one-liner: "I fixed the model-choice rule before opening the test set, and chose the model that cannot see acquisition artifacts when performance is tied."
 
 ## Decision 44: Operating thresholds chosen on validation for 95% size-adjusted recall, then applied once to test
-- Thresholds: A 0.276, B 0.734
+
+- Thresholds: A 0.276, B 0.734  
 - Limitation: chosen on only 399 adjusted validation images, so test recall can differ
 
 ## Decision 45: Patient-level bootstrap (1000 resamples) for 95% confidence intervals
-- Why: images from one patient are not independent; resampling images would give intervals that are too narrow
+
+- Why: images from one patient are not independent; resampling images would give intervals that are too narrow  
 - Limitation: size-adjusted weights are computed once on the test set, not recomputed per resample
 
 ## Decision 46: Final test results (test set opened once; both pre-declared models reported)
-- Headline model by the pre-declared rule: B
-Breakdown for the headline model:
+
+- Headline model by the pre-declared rule: B Breakdown for the headline model:
+## Decision 47: Self-contained Streamlit + Plotly dashboard in app/
+- Why: a recruiter can open a link and interact with the model; the app folder runs on its own (own model definition, assets, weights)
+- Tested with Streamlit's test harness: every button, slider and model switch, in live and precomputed modes
+
+## Decision 48: The dashboard only reads results that already exist
+- Test predictions, metrics and samples come from Phase 7 outputs; the threshold slider is for exploration
+- The default threshold is the one chosen on validation. No model changes after the test set was opened
+
+## Decision 49: Safety framing built into the interface
+- Disclaimers on every page, no storage of uploaded images, a warning that non-paediatric images are out of scope
+- A missed case and a false alarm are shown as samples on purpose
+- Interview one-liner: "I put the limitations in the interface, not just the README."
+
+## Decision 50: Project paths no longer depend on the Drive folder name
+- Why: renaming the Drive folder broke every notebook header; project_setup.py now derives PROJECT_DIR from its own location

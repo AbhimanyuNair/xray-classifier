@@ -1,0 +1,42 @@
+[
+  {
+    "file": "sample_0.png",
+    "title": "Normal \u00b7 cleared",
+    "truth": "NORMAL",
+    "prob_A": 0.00023730313,
+    "prob_B": 0.00083991635,
+    "note": "A normal X-ray that the model cleared."
+  },
+  {
+    "file": "sample_1.png",
+    "title": "Bacterial \u00b7 caught",
+    "truth": "PNEUMONIA (bacterial)",
+    "prob_A": 0.9965984,
+    "prob_B": 0.99900335,
+    "note": "A bacterial pneumonia case the model flagged."
+  },
+  {
+    "file": "sample_2.png",
+    "title": "Viral \u00b7 caught",
+    "truth": "PNEUMONIA (viral)",
+    "prob_A": 0.9952396,
+    "prob_B": 0.99976057,
+    "note": "A viral pneumonia case the model flagged."
+  },
+  {
+    "file": "sample_3.png",
+    "title": "Hard case \u00b7 missed",
+    "truth": "PNEUMONIA",
+    "prob_A": 0.7853433,
+    "prob_B": 0.59325063,
+    "note": "A pneumonia case the model missed. Shown on purpose: no model is perfect."
+  },
+  {
+    "file": "sample_4.png",
+    "title": "False alarm",
+    "truth": "NORMAL",
+    "prob_A": 0.72186846,
+    "prob_B": 0.98053277,
+    "note": "A normal X-ray the model flagged. This happens for about 3% of normal images at this threshold."
+  }
+]
