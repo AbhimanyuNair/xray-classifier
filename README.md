@@ -30,7 +30,7 @@ Grad-CAM visualizations indicate image regions that influenced a model predictio
 Clone the repository and install the hosted dashboard dependencies:
 
 ```bash
-git clone YOUR_REPOSITORY_URL
-cd YOUR_REPOSITORY_NAME
+git clone https://github.com/AbhimanyuNair/xray-classifier/tree/main
+cd xray-classifier
 pip install -r app/requirements.txt
 streamlit run app/app.py
