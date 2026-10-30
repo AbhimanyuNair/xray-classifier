@@ -311,3 +311,9 @@ geometry-only (no pixels)           0.925           0.556       0.467           
 
 ## Decision 50: Project paths no longer depend on the Drive folder name
 - Why: renaming the Drive folder broke every notebook header; project_setup.py now derives PROJECT_DIR from its own location
+
+## Decision 51: Free hosted version runs in lite mode with precomputed heatmaps
+- Why: free Hugging Face Docker Spaces now require a paid plan; Streamlit Community Cloud is free but has limited memory, so the hosted app skips PyTorch
+- Probabilities and Grad-CAM heatmaps for the five sample images were precomputed from the real models; the live pipeline was checked against the stored Phase 7 predictions
+- Uploads need the weights and are available when running from the repository (requirements-full.txt)
+- Interview one-liner: "I designed the app to degrade gracefully: full live inference locally, a precomputed-evidence mode on free hosting."

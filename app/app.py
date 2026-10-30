@@ -371,12 +371,15 @@ with tab_demo:
             if live:
                 prob, cam = result
             elif sample is not None:
-                prob, cam = float(sample["prob_" + demo_model]), None
-                st.warning("Live inference is not available in this environment, so this page shows the precomputed result "
-                           "for the selected test sample.")
+                prob = float(sample["prob_" + demo_model])
+                cam_file = ASSETS / "cams" / (Path(sample["file"]).stem + "_" + demo_model + ".npy")
+                cam = np.load(cam_file).astype("float32") if cam_file.exists() else None
+                st.info("Hosted lite mode: this shows the precomputed result and heatmap for the selected held-out test image. "
+                        "Uploading your own image needs the model weights (run the app from the GitHub repository).")
             else:
                 prob, cam = None, None
-                st.warning("Live inference is not available in this environment. Select one of the test samples instead.")
+                st.warning("Uploads need the model weights, which are not loaded in this hosted lite version. "
+                           "Select one of the test samples instead.")
 
             if prob is not None:
                 ctl1, ctl2, ctl3 = st.columns([1.4, 1, 1], gap="large")
